@@ -12,8 +12,6 @@ services:
     ports:
       - 1337:1337
     env_file: .env
-    environment:
-      - BASE_URL=http://localhost:1337
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,7 +24,7 @@ services:
     volumes:
       - ./client:/app
     ports:
-      - 3000:3000
+      - ${PORT:-3000}:3000
 
   postgres:
     image: postgres:16-alpine
