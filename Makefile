@@ -1,0 +1,72 @@
+IMAGE_NAME ?= neo-planka
+IMAGE_TAG  ?= latest
+REGISTRY   ?=
+PLATFORM   ?= linux/arm64
+
+FULL_IMAGE  = $(if $(REGISTRY),$(REGISTRY)/,)$(IMAGE_NAME):$(IMAGE_TAG)
+BUILDER     = neo-planka-multiarch
+
+# ---------------------------------------------------------------------------
+# Development (runs natively on your PC)
+# ---------------------------------------------------------------------------
+
+.PHONY: dev
+dev: ## Start dev environment (server + client + postgres)
+	docker compose -f docker-compose-dev.yml up --build
+
+.PHONY: dev-down
+dev-down: ## Stop dev environment
+	docker compose -f docker-compose-dev.yml down
+
+.PHONY: dev-clean
+dev-clean: ## Stop dev environment and remove volumes
+	docker compose -f docker-compose-dev.yml down -v
+
+# ---------------------------------------------------------------------------
+# ARM64 build (cross-compile for Raspberry Pi)
+# ---------------------------------------------------------------------------
+
+.PHONY: builder
+builder: ## Create buildx builder for multi-arch builds
+	@docker buildx inspect $(BUILDER) >/dev/null 2>&1 || \
+		docker buildx create --name $(BUILDER) --driver docker-container --bootstrap
+	@docker buildx use $(BUILDER)
+
+.PHONY: build-arm64
+build-arm64: builder ## Build ARM64 image and export as tarball
+	docker buildx build \
+		--platform linux/arm64 \
+		--tag $(FULL_IMAGE) \
+		--output type=docker,dest=neo-planka-arm64.tar \
+		.
+	@echo ""
+	@echo "Image saved to neo-planka-arm64.tar"
+	@echo "Transfer to Pi:  scp neo-planka-arm64.tar pi@<pi-ip>:~/"
+	@echo "Load on Pi:      docker load -i neo-planka-arm64.tar"
+
+.PHONY: build-arm64-push
+build-arm64-push: builder ## Build ARM64 image and push to registry
+	docker buildx build \
+		--platform linux/arm64 \
+		--tag $(FULL_IMAGE) \
+		--push \
+		.
+
+.PHONY: build-native
+build-native: ## Build image for current architecture
+	docker build -t $(FULL_IMAGE) .
+
+.PHONY: build-multi
+build-multi: builder ## Build for both amd64 and arm64 (push to registry)
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(FULL_IMAGE) \
+		--push \
+		.
+
+.PHONY: help
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT_GOAL := help
