@@ -64,6 +64,21 @@ build-multi: builder ## Build for both amd64 and arm64 (push to registry)
 		--push \
 		.
 
+# ---------------------------------------------------------------------------
+# Deploy helpers
+# ---------------------------------------------------------------------------
+
+.PHONY: deploy-tar
+deploy-tar: build-arm64 ## Build ARM64 image + compose into a deployable bundle
+	tar cf neo-planka-deploy.tar neo-planka-arm64.tar docker-compose-pi.yml .env.example
+	@echo ""
+	@echo "Deploy bundle: neo-planka-deploy.tar"
+	@echo "On the Pi:"
+	@echo "  tar xf neo-planka-deploy.tar"
+	@echo "  cp .env.example .env  # then edit .env"
+	@echo "  docker load -i neo-planka-arm64.tar"
+	@echo "  docker compose -f docker-compose-pi.yml up -d"
+
 .PHONY: help
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
