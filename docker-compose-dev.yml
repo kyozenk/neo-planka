@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: planka-dev
+    image: neo-planka-dev
     pull_policy: never
     command: ["bash", "-c", "npm install && npm run db:init && npm start"]
     restart: on-failure
@@ -99,7 +99,7 @@ services:
         condition: service_healthy
 
   planka-client:
-    image: planka-dev
+    image: neo-planka-dev
     pull_policy: never
     command: ["bash", "-c", "npm install && npx vite --host"]
     restart: on-failure
