@@ -12,7 +12,7 @@ BUILDER     = neo-planka-multiarch
 
 .PHONY: dev
 dev: ## Start dev environment (server + client + postgres)
-	docker compose -f docker-compose-dev.yml up --build
+	docker compose -f docker-compose-dev.yml up --build -d
 
 .PHONY: dev-down
 dev-down: ## Stop dev environment
