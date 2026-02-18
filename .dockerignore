@@ -21,3 +21,6 @@ server/terms/*
 !server/terms/cloud
 
 client/dist
+
+# Artifacts
+*.tar
