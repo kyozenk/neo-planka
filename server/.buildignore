@@ -20,6 +20,10 @@ test
 .tmp
 .venv
 
-views/index.ejs
+views/index.html
 
 data/*
+
+terms/*
+!terms/_template
+!terms/cloud

@@ -134,7 +134,11 @@ swagger.json
 dist
 logs
 
-views/index.ejs
+views/index.html
 
 data/*
 !data/.gitkeep
+
+terms/*
+!terms/_template
+!terms/cloud

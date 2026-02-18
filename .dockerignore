@@ -11,9 +11,13 @@ server/test
 server/.tmp
 server/.venv
 
-server/views/index.ejs
+server/views/index.html
 
 server/data/*
 !server/data/.gitkeep
+
+server/terms/*
+!server/terms/_template
+!server/terms/cloud
 
 client/dist

@@ -1,6 +1,6 @@
 {
   "name": "neo-planka",
-  "version": "2.0.0-rc.4",
+  "version": "2.0.1",
   "private": true,
   "scripts": {
     "client:build": "npm run build --prefix client",

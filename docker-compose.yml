@@ -4,6 +4,11 @@ services:
     restart: on-failure
     volumes:
       - data:/app/data
+      # - ./terms:/app/terms/custom
+    # Optionally override this to your user/group
+    # user: 1000:1000
+    # tmpfs:
+    #   - /app/.tmp:mode=770,uid=1000,gid=1000
     ports:
       - ${PORT:-3000}:1337
     env_file: .env
