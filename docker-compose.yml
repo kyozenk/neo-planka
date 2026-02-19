@@ -10,7 +10,7 @@ services:
     # tmpfs:
     #   - /app/.tmp:mode=770,uid=1000,gid=1000
     ports:
-      - ${PORT:-3000}:1337
+      - ${HOST_PORT:-3000}:1337
     env_file: .env
     depends_on:
       postgres:

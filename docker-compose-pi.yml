@@ -5,8 +5,14 @@ services:
     volumes:
       - data:/app/data
     ports:
-      - ${PORT:-3000}:1337
+      - ${HOST_PORT:-3000}:1337
     env_file: .env
+    healthcheck:
+      test: ["CMD", "node", "./healthcheck.js"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 5
     depends_on:
       postgres:
         condition: service_healthy
