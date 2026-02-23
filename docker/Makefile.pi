@@ -1,0 +1,43 @@
+COMPOSE_PROJECT ?= neo-planka
+
+POSTGRES_CONTAINER = $(COMPOSE_PROJECT)-postgres-1
+APP_CONTAINER      = $(COMPOSE_PROJECT)-planka-1
+
+# ---------------------------------------------------------------------------
+# Deploy
+# ---------------------------------------------------------------------------
+
+.PHONY: deploy
+deploy: ## Load image and start the application
+	docker load -i neo-planka-arm64.tar
+	docker compose --project-name $(COMPOSE_PROJECT) -f docker-compose-pi.yml up -d
+
+.PHONY: up
+up: ## Start the application
+	docker compose --project-name $(COMPOSE_PROJECT) -f docker-compose-pi.yml up -d
+
+.PHONY: down
+down: ## Stop the application
+	docker compose --project-name $(COMPOSE_PROJECT) -f docker-compose-pi.yml down
+
+# ---------------------------------------------------------------------------
+# Backup / Restore
+# ---------------------------------------------------------------------------
+
+.PHONY: backup
+backup: ## Backup prod environment (DB + data)
+	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
+		bash docker-backup.sh
+
+.PHONY: restore
+restore: ## Restore prod environment from backup (usage: make restore BACKUP=<file.tgz>)
+	@test -n "$(BACKUP)" || (echo "Usage: make restore BACKUP=<file.tgz>" && exit 1)
+	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
+		bash docker-restore.sh $(BACKUP)
+
+.PHONY: help
+help: ## Show this help
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT_GOAL := help

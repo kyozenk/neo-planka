@@ -3,12 +3,8 @@ IMAGE_TAG       ?= latest
 REGISTRY        ?=
 PLATFORM        ?= linux/arm64
 
-FULL_IMAGE       = $(if $(REGISTRY),$(REGISTRY)/,)$(IMAGE_NAME):$(IMAGE_TAG)
-BUILDER          = neo-planka-multiarch
-COMPOSE_PROJECT ?= $(IMAGE_NAME)
-
-POSTGRES_CONTAINER = $(COMPOSE_PROJECT)-postgres-1
-APP_CONTAINER      = $(COMPOSE_PROJECT)-planka-1
+FULL_IMAGE  = $(if $(REGISTRY),$(REGISTRY)/,)$(IMAGE_NAME):$(IMAGE_TAG)
+BUILDER     = neo-planka-multiarch
 
 # ---------------------------------------------------------------------------
 # Development (runs natively on your PC)
@@ -77,29 +73,23 @@ build-multi: builder ## Build for both amd64 and arm64 (push to registry)
 
 .PHONY: deploy-tar
 deploy-tar: build-arm64 ## Build ARM64 image + compose into a deployable bundle
-	tar cf neo-planka-deploy.tar neo-planka-arm64.tar docker/docker-compose-pi.yml .env.example
+	@rm -rf .deploy-stage
+	@mkdir -p .deploy-stage
+	@cp neo-planka-arm64.tar \
+		docker/docker-compose-pi.yml \
+		scripts/docker-backup.sh \
+		scripts/docker-restore.sh \
+		.env.example \
+		.deploy-stage/
+	@cp docker/Makefile.pi .deploy-stage/Makefile
+	tar -C .deploy-stage -cf "$(CURDIR)/neo-planka-deploy.tar" .
+	@rm -rf .deploy-stage
 	@echo ""
 	@echo "Deploy bundle: neo-planka-deploy.tar"
 	@echo "On the Pi:"
 	@echo "  tar xf neo-planka-deploy.tar"
 	@echo "  cp .env.example .env  # then edit .env"
-	@echo "  docker load -i neo-planka-arm64.tar"
-	@echo "  docker compose --project-directory . -f docker/docker-compose-pi.yml up -d"
-
-# ---------------------------------------------------------------------------
-# Backup / Restore
-# ---------------------------------------------------------------------------
-
-.PHONY: backup
-backup: ## Backup prod environment (DB + data)
-	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
-		bash docker-backup.sh
-
-.PHONY: restore
-restore: ## Restore prod environment from backup (usage: make restore BACKUP=<file.tgz>)
-	@test -n "$(BACKUP)" || (echo "Usage: make restore BACKUP=<file.tgz>" && exit 1)
-	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
-		bash docker-restore.sh $(BACKUP)
+	@echo "  make deploy"
 
 .PHONY: help
 help: ## Show this help
