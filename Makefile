@@ -1,10 +1,14 @@
-IMAGE_NAME ?= neo-planka
-IMAGE_TAG  ?= latest
-REGISTRY   ?=
-PLATFORM   ?= linux/arm64
+IMAGE_NAME      ?= neo-planka
+IMAGE_TAG       ?= latest
+REGISTRY        ?=
+PLATFORM        ?= linux/arm64
 
-FULL_IMAGE  = $(if $(REGISTRY),$(REGISTRY)/,)$(IMAGE_NAME):$(IMAGE_TAG)
-BUILDER     = neo-planka-multiarch
+FULL_IMAGE       = $(if $(REGISTRY),$(REGISTRY)/,)$(IMAGE_NAME):$(IMAGE_TAG)
+BUILDER          = neo-planka-multiarch
+COMPOSE_PROJECT ?= $(IMAGE_NAME)
+
+POSTGRES_CONTAINER = $(COMPOSE_PROJECT)-postgres-1
+APP_CONTAINER      = $(COMPOSE_PROJECT)-planka-1
 
 # ---------------------------------------------------------------------------
 # Development (runs natively on your PC)
@@ -80,7 +84,22 @@ deploy-tar: build-arm64 ## Build ARM64 image + compose into a deployable bundle
 	@echo "  tar xf neo-planka-deploy.tar"
 	@echo "  cp .env.example .env  # then edit .env"
 	@echo "  docker load -i neo-planka-arm64.tar"
-	@echo "  docker compose -f docker/docker-compose-pi.yml up -d"
+	@echo "  docker compose --project-directory . -f docker/docker-compose-pi.yml up -d"
+
+# ---------------------------------------------------------------------------
+# Backup / Restore
+# ---------------------------------------------------------------------------
+
+.PHONY: backup
+backup: ## Backup prod environment (DB + data)
+	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
+		bash docker-backup.sh
+
+.PHONY: restore
+restore: ## Restore prod environment from backup (usage: make restore BACKUP=<file.tgz>)
+	@test -n "$(BACKUP)" || (echo "Usage: make restore BACKUP=<file.tgz>" && exit 1)
+	POSTGRES_CONTAINER=$(POSTGRES_CONTAINER) APP_CONTAINER=$(APP_CONTAINER) \
+		bash docker-restore.sh $(BACKUP)
 
 .PHONY: help
 help: ## Show this help

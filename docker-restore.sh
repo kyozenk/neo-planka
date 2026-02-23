@@ -3,9 +3,8 @@
 # Stop on Error
 set -e
 
-# Configure those to match your PLANKA Docker container names
-PLANKA_DOCKER_CONTAINER_POSTGRES="planka-postgres-1"
-PLANKA_DOCKER_CONTAINER_PLANKA="planka-planka-1"
+PLANKA_DOCKER_CONTAINER_POSTGRES="${POSTGRES_CONTAINER:-neo-planka-postgres-1}"
+PLANKA_DOCKER_CONTAINER_PLANKA="${APP_CONTAINER:-neo-planka-planka-1}"
 
 # Extract tgz archive
 PLANKA_BACKUP_ARCHIVE_TGZ=$1
