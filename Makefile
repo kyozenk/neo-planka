@@ -12,15 +12,15 @@ BUILDER     = neo-planka-multiarch
 
 .PHONY: dev
 dev: ## Start dev environment (server + client + postgres)
-	docker compose -f docker-compose-dev.yml up --build -d
+	docker compose --project-directory . -f docker/docker-compose-dev.yml up --build -d
 
 .PHONY: dev-down
 dev-down: ## Stop dev environment
-	docker compose -f docker-compose-dev.yml down
+	docker compose --project-directory . -f docker/docker-compose-dev.yml down
 
 .PHONY: dev-clean
 dev-clean: ## Stop dev environment and remove volumes
-	docker compose -f docker-compose-dev.yml down -v
+	docker compose --project-directory . -f docker/docker-compose-dev.yml down -v
 
 # ---------------------------------------------------------------------------
 # ARM64 build (cross-compile for Raspberry Pi)
@@ -36,6 +36,7 @@ builder: ## Create buildx builder for multi-arch builds
 build-arm64: builder ## Build ARM64 image and export as tarball
 	docker buildx build \
 		--platform linux/arm64 \
+		--file docker/Dockerfile \
 		--tag $(FULL_IMAGE) \
 		--output type=docker,dest=neo-planka-arm64.tar \
 		.
@@ -48,18 +49,20 @@ build-arm64: builder ## Build ARM64 image and export as tarball
 build-arm64-push: builder ## Build ARM64 image and push to registry
 	docker buildx build \
 		--platform linux/arm64 \
+		--file docker/Dockerfile \
 		--tag $(FULL_IMAGE) \
 		--push \
 		.
 
 .PHONY: build-native
 build-native: ## Build image for current architecture
-	docker build -t $(FULL_IMAGE) .
+	docker build -f docker/Dockerfile -t $(FULL_IMAGE) .
 
 .PHONY: build-multi
 build-multi: builder ## Build for both amd64 and arm64 (push to registry)
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
+		--file docker/Dockerfile \
 		--tag $(FULL_IMAGE) \
 		--push \
 		.
@@ -70,14 +73,14 @@ build-multi: builder ## Build for both amd64 and arm64 (push to registry)
 
 .PHONY: deploy-tar
 deploy-tar: build-arm64 ## Build ARM64 image + compose into a deployable bundle
-	tar cf neo-planka-deploy.tar neo-planka-arm64.tar docker-compose-pi.yml .env.example
+	tar cf neo-planka-deploy.tar neo-planka-arm64.tar docker/docker-compose-pi.yml .env.example
 	@echo ""
 	@echo "Deploy bundle: neo-planka-deploy.tar"
 	@echo "On the Pi:"
 	@echo "  tar xf neo-planka-deploy.tar"
 	@echo "  cp .env.example .env  # then edit .env"
 	@echo "  docker load -i neo-planka-arm64.tar"
-	@echo "  docker compose -f docker-compose-pi.yml up -d"
+	@echo "  docker compose -f docker/docker-compose-pi.yml up -d"
 
 .PHONY: help
 help: ## Show this help

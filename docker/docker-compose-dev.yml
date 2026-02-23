@@ -2,7 +2,7 @@ services:
   planka-server:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: docker/Dockerfile.dev
     image: neo-planka-dev
     pull_policy: never
     command: ["bash", "-c", "npm install && npm run db:init && npm start"]
